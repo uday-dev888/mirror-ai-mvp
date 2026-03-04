@@ -1,0 +1,52 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+5. Scroll down
+6. Click **"Commit new file"**
+
+---
+
+### **STEP 2: Wait for Auto-Redeploy**
+
+**Vercel watches your GitHub repo!**
+- Detects new file
+- Triggers automatic deployment
+- Takes 2-3 minutes
+
+---
+
+### **STEP 3: Test Again**
+
+**After deployment completes:**
+
+1. **Clear your mobile browser cache:**
+   - Chrome: Settings → Privacy → Clear browsing data → Cached images
+   - OR just close all tabs and reopen
+
+2. **Try the URL again:**
+   - `https://mirror-ai-mvp-k5bo.vercel.app`
+
+3. **Should work now!** ✅
+
+---
+
+## 💡 **WHAT vercel.json DOES:**
+```
+User visits: /dashboard
+               ↓
+Vercel: "No /dashboard file... let me check vercel.json"
+               ↓
+vercel.json: "For ANY route (.*), serve index.html"
+               ↓
+Serves: index.html (your Vite app)
+               ↓
+Vite router: "Oh, /dashboard? I'll handle that!"
+               ↓
+Shows: Dashboard page! ✅
