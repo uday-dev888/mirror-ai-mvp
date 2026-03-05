@@ -7,6 +7,7 @@ import { EventCreationModal, EventData } from '../components/EventCreationModal'
 import { SFTPSetupWizard } from '../components/SFTPSetupWizard';
 import { Calendar, Upload, Heart, Eye, Share2, QrCode, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../lib/authContext';
 
 const events = [
   {
@@ -36,6 +37,7 @@ const events = [
 ];
 
 export function Dashboard() {
+  const { currentUser } = useAuth();
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isSFTPWizardOpen, setIsSFTPWizardOpen] = useState(false);
   const [eventData, setEventData] = useState<EventData | null>(null);
@@ -46,11 +48,29 @@ export function Dashboard() {
     setIsSFTPWizardOpen(true);
   };
 
+  const getUserDisplayName = () => {
+    if (!currentUser) return '';
+
+    if (currentUser.displayName) {
+      return currentUser.displayName;
+    }
+
+    if (currentUser.email) {
+      const emailPrefix = currentUser.email.split('@')[0];
+      return emailPrefix
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+    }
+
+    return 'there';
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
         <h1 className="text-3xl md:text-4xl font-bold text-[#3E2723]" style={{ fontFamily: "'Playfair Display', serif" }}>
-          Welcome back, Priya
+          Welcome back{getUserDisplayName() && `, ${getUserDisplayName()}`}
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -169,3 +189,4 @@ export function Dashboard() {
     </DashboardLayout>
   );
 }
+
