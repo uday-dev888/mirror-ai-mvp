@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Logo } from '../components/Logo';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 
 export function Login() {
   const navigate = useNavigate();
@@ -14,6 +15,11 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +58,43 @@ export function Login() {
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setResetSuccess(false);
+    setResetLoading(true);
+
+    try {
+      await sendPasswordResetEmail(auth, resetEmail, {
+        url: window.location.origin + '/login',
+        handleCodeInApp: false
+      });
+      setResetSuccess(true);
+      setTimeout(() => {
+        setResetSuccess(false);
+        setShowForgotPassword(false);
+        setResetEmail('');
+      }, 10000);
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      switch (err.code) {
+        case 'auth/invalid-email':
+          setError('Invalid email address');
+          break;
+        case 'auth/user-not-found':
+          setError('No account found with this email');
+          break;
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your connection');
+          break;
+        default:
+          setError('Failed to send email. Please try again');
+      }
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setError('');
@@ -144,24 +187,104 @@ export function Login() {
             disabled={loading}
           />
 
-          <Input
-            type="password"
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
+          <div className="w-full">
+            <label className="block text-sm font-medium text-[#3E2723] mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 pr-12 bg-[#FAF8F3] border border-[#E0D7C6] rounded-lg text-[#3E2723] placeholder-[#A08A6D] focus:outline-none focus:ring-2 focus:ring-[#4E342E] focus:border-transparent transition-all duration-200"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B4423] hover:text-[#4E342E] transition-colors duration-200"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
 
           <div className="flex justify-end">
-            <a
-              href="#"
+            <button
+              type="button"
+              onClick={() => {
+                setShowForgotPassword(!showForgotPassword);
+                setError('');
+                setResetSuccess(false);
+              }}
               className="text-sm text-[#4E342E] hover:underline font-medium"
             >
               Forgot Password?
-            </a>
+            </button>
           </div>
+
+          {showForgotPassword && (
+            <div className="p-4 bg-[#F5F1E8] border border-[#E0D7C6] rounded-lg space-y-4">
+              <div className="flex items-center gap-2 text-[#3E2723]">
+                <Mail size={18} />
+                <p className="text-sm font-medium">Enter your email to reset password</p>
+              </div>
+
+              {resetSuccess && (
+                <div className="p-3 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg text-sm flex items-start gap-2">
+                  <span className="text-lg">✉️</span>
+                  <div>
+                    <p className="font-medium">Password reset link sent!</p>
+                    <p className="text-xs mt-1">Check your email at {resetEmail}</p>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleForgotPassword} className="space-y-3">
+                <Input
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  disabled={resetLoading}
+                />
+
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={resetLoading}
+                    className="flex-1"
+                  >
+                    {resetLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Sending...
+                      </span>
+                    ) : (
+                      'Send Reset Link'
+                    )}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmail('');
+                      setError('');
+                      setResetSuccess(false);
+                    }}
+                    className="px-4 py-2 text-sm text-[#6B4423] hover:text-[#4E342E] font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           <Button type="submit" fullWidth size="lg" disabled={loading || googleLoading}>
             {loading ? (
@@ -232,6 +355,7 @@ export function Login() {
     </div>
   );
 }
+
 
 
 
