@@ -1,25 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { Button } from './Button';
-import { Camera, Wifi, Copy, Check, Eye, EyeOff, Play, CheckCircle } from 'lucide-react';
+import { Camera, Wifi, Copy, Check, Eye, EyeOff, Play, CheckCircle, AlertCircle } from 'lucide-react';
 import { EventData } from './EventCreationModal';
+import { useAuth } from '../lib/authContext';
+import { db } from '../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface SFTPSetupWizardProps {
   isOpen: boolean;
   onClose: () => void;
   eventData: EventData | null;
+  onEventCreated?: () => void;
 }
 
-export function SFTPSetupWizard({ isOpen, onClose, eventData }: SFTPSetupWizardProps) {
+export function SFTPSetupWizard({ isOpen, onClose, eventData, onEventCreated }: SFTPSetupWizardProps) {
+  const { currentUser } = useAuth();
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState('');
   const [testUploadStatus, setTestUploadStatus] = useState<'waiting' | 'success'>('waiting');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const credentials = {
-    server: 'upload.mirrorai.io',
-    username: eventData ? `wedding-${eventData.clientNames.toLowerCase().replace(/\s+&\s+/g, '-').replace(/\s+/g, '-')}-2026` : 'wedding-event-2026',
-    password: 'SecurePass123!@#',
+    server: 'sftp.thornstorage.com',
+    username: eventData?.sftpUsername || 'user_default',
+    password: eventData?.sftpPassword || 'password',
     port: '22'
   };
 
@@ -37,6 +45,58 @@ export function SFTPSetupWizard({ isOpen, onClose, eventData }: SFTPSetupWizardP
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleSaveEvent = async () => {
+    if (!eventData || !currentUser) {
+      setSaveError('Missing event data or user information');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      console.log('SFTPSetupWizard: Saving event to Firestore...');
+
+      const eventDoc = {
+        couple: eventData.clientNames,
+        name: eventData.eventName,
+        date: eventData.date,
+        location: eventData.location,
+        createdBy: currentUser.uid,
+        status: 'active',
+        sftpCredentials: {
+          server: credentials.server,
+          username: credentials.username,
+          password: credentials.password,
+          port: credentials.port
+        },
+        createdAt: serverTimestamp(),
+        views: 0,
+        photoCount: 0,
+        image: 'https://images.pexels.com/photos/2959192/pexels-photo-2959192.jpeg?auto=compress&cs=tinysrgb&w=800',
+        isNew: true
+      };
+
+      const docRef = await addDoc(collection(db, 'events'), eventDoc);
+      console.log('SFTPSetupWizard: Event created with ID:', docRef.id);
+
+      setSaveSuccess(true);
+
+      setTimeout(() => {
+        if (onEventCreated) {
+          onEventCreated();
+        }
+        onClose();
+      }, 1500);
+
+    } catch (error) {
+      console.error('SFTPSetupWizard: Error saving event:', error);
+      setSaveError('Failed to create event. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => {
@@ -47,6 +107,9 @@ export function SFTPSetupWizard({ isOpen, onClose, eventData }: SFTPSetupWizardP
       setTestUploadStatus('waiting');
       setSelectedBrand('');
       setShowPassword(false);
+      setSaveError(null);
+      setSaveSuccess(false);
+      setIsSaving(false);
     }
   }, [isOpen]);
 
@@ -202,18 +265,39 @@ export function SFTPSetupWizard({ isOpen, onClose, eventData }: SFTPSetupWizardP
           </div>
         </div>
 
-        <div className="mt-10 space-y-4">
-          <Button fullWidth size="lg" onClick={onClose}>
-            Continue to Dashboard
-          </Button>
-          <div className="text-center">
-            <button
-              onClick={onClose}
-              className="text-[#6B4423] hover:text-[#3E2723] font-medium transition-colors"
-            >
-              Skip Setup — I'll do this later
-            </button>
+        {saveError && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+            <p className="text-red-800 text-sm">{saveError}</p>
           </div>
+        )}
+
+        {saveSuccess && (
+          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+            <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+            <p className="text-green-800 text-sm font-medium">Event created successfully! Redirecting to dashboard...</p>
+          </div>
+        )}
+
+        <div className="mt-10 space-y-4">
+          <Button
+            fullWidth
+            size="lg"
+            onClick={handleSaveEvent}
+            disabled={isSaving || saveSuccess}
+          >
+            {isSaving ? 'Creating Event...' : saveSuccess ? 'Event Created!' : 'Complete Setup & Save Event'}
+          </Button>
+          {!isSaving && !saveSuccess && (
+            <div className="text-center">
+              <button
+                onClick={onClose}
+                className="text-[#6B4423] hover:text-[#3E2723] font-medium transition-colors"
+              >
+                Skip for now — I'll set this up later
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -231,3 +315,4 @@ export function SFTPSetupWizard({ isOpen, onClose, eventData }: SFTPSetupWizardP
     </Modal>
   );
 }
+
