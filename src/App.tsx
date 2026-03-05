@@ -3,6 +3,7 @@ import { AuthProvider } from './lib/authContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
+import { ResetPassword } from './pages/ResetPassword';
 import { Dashboard } from './pages/Dashboard';
 import { Galleries } from './pages/Galleries';
 import { ClientGallery } from './pages/ClientGallery';
@@ -17,6 +18,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/dashboard"
             element={
@@ -57,3 +59,4 @@ function App() {
 }
 
 export default App;
+
