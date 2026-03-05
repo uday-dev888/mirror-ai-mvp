@@ -7,6 +7,7 @@ import { Logo } from '../components/Logo';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function Signup() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ export function Signup() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,25 +220,55 @@ export function Signup() {
             disabled={loading}
           />
 
-          <Input
-            type="password"
-            label="Password"
-            placeholder="At least 6 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
+          <div className="w-full">
+            <label className="block text-sm font-medium text-[#3E2723] mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="At least 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 pr-12 bg-[#FAF8F3] border border-[#E0D7C6] rounded-lg text-[#3E2723] placeholder-[#A08A6D] focus:outline-none focus:ring-2 focus:ring-[#4E342E] focus:border-transparent transition-all duration-200"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B4423] hover:text-[#4E342E] transition-colors duration-200"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
 
-          <Input
-            type="password"
-            label="Confirm Password"
-            placeholder="Re-enter your password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
+          <div className="w-full">
+            <label className="block text-sm font-medium text-[#3E2723] mb-2">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 pr-12 bg-[#FAF8F3] border border-[#E0D7C6] rounded-lg text-[#3E2723] placeholder-[#A08A6D] focus:outline-none focus:ring-2 focus:ring-[#4E342E] focus:border-transparent transition-all duration-200"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B4423] hover:text-[#4E342E] transition-colors duration-200"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
 
           <Button type="submit" fullWidth size="lg" disabled={loading || googleLoading}>
             {loading ? (
@@ -259,6 +292,7 @@ export function Signup() {
     </div>
   );
 }
+
 
 
 
