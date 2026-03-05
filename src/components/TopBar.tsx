@@ -31,6 +31,24 @@ export function TopBar() {
     }
   };
 
+  const getUserDisplayName = () => {
+    if (!currentUser) return 'User';
+
+    if (currentUser.displayName) {
+      return currentUser.displayName;
+    }
+
+    if (currentUser.email) {
+      const emailPrefix = currentUser.email.split('@')[0];
+      return emailPrefix
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+    }
+
+    return 'User';
+  };
+
   return (
     <div className="h-16 bg-[#FAF8F3] border-b border-[#E0D7C6] flex items-center justify-end px-6 gap-4">
       <button className="p-2 hover:bg-[#F5F1E8] rounded-lg transition-colors duration-200 relative">
@@ -59,7 +77,7 @@ export function TopBar() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#6B4423] truncate">
-                    {currentUser?.displayName || 'User'}
+                    {getUserDisplayName()}
                   </p>
                   <p className="text-xs text-[#9B8B7E] truncate">
                     {currentUser?.email}
@@ -94,4 +112,5 @@ export function TopBar() {
     </div>
   );
 }
+
 
