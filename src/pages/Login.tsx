@@ -66,10 +66,7 @@ export function Login() {
     setResetLoading(true);
 
     try {
-      await sendPasswordResetEmail(auth, resetEmail, {
-        url: window.location.origin + '/login',
-        handleCodeInApp: false
-      });
+      await sendPasswordResetEmail(auth, resetEmail);
       setResetSuccess(true);
       setTimeout(() => {
         setResetSuccess(false);
@@ -355,6 +352,7 @@ export function Login() {
     </div>
   );
 }
+
 
 
 
